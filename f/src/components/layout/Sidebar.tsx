@@ -1,23 +1,13 @@
 import { Link, useLocation } from 'react-router-dom'
-import { 
-  LayoutDashboard, 
-  Mic, 
-  Phone, 
-  User, 
-  BarChart3,
-  Settings 
-} from 'lucide-react'
 
 const Sidebar = () => {
   const location = useLocation()
 
   const navigation = [
-    { name: 'Dashboard', href: '/app', icon: LayoutDashboard },
-    { name: 'Translate', href: '/app/translate', icon: Mic },
-    { name: 'Call', href: '/app/call', icon: Phone },
-    { name: 'Analytics', href: '/app/analytics', icon: BarChart3 },
-    { name: 'Profile', href: '/app/profile', icon: User },
-    { name: 'Settings', href: '/app/settings', icon: Settings },
+    { name: 'Dashboard', href: '/app' },
+    { name: 'Translate', href: '/app/translate' },
+    { name: 'Call', href: '/app/call' },
+    { name: 'Profile', href: '/app/profile' },
   ]
 
   return (
@@ -31,11 +21,10 @@ const Sidebar = () => {
               to={item.href}
               className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
                 isActive
-                  ? 'bg-primary-50 text-primary-600 border-primary-200'
+                  ? 'bg-blue-50 text-blue-600'
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               }`}
             >
-              <item.icon className="w-5 h-5" />
               <span className="font-medium">{item.name}</span>
             </Link>
           )

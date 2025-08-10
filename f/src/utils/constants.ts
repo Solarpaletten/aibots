@@ -33,6 +33,6 @@ export const SUBSCRIPTION_LIMITS = {
 export const APP_CONFIG = {
   name: import.meta.env.VITE_APP_NAME || 'SOLAR Voice Translator',
   version: import.meta.env.VITE_APP_VERSION || '2.0.0',
-  apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v2',
-  socketUrl: import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001',
+  apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v2',
+  socketUrl: import.meta.env.VITE_SOCKET_URL || 'http://localhost:4000',
 }
