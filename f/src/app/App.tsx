@@ -1,13 +1,10 @@
-import { BrowserRouter } from 'react-router-dom'
 import AppProvider from './AppProvider'
 import AppRouter from './AppRouter'
 
-const App = () => {
+function App() {
   return (
     <AppProvider>
-      <BrowserRouter>
-        <AppRouter />
-      </BrowserRouter>
+      <AppRouter />
     </AppProvider>
   )
 }

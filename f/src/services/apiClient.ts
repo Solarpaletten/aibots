@@ -1,37 +1,38 @@
 import axios from 'axios'
-import { useAuthStore } from '@/hooks/useAuth'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v2'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v2'
+
+console.log('API Base URL:', API_BASE_URL)
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000
 })
 
-// Request interceptor to add auth token
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = useAuthStore.getState().token
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
+// Request interceptor for auth token
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('auth_token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  console.log('Making API request to:', config.url)
+  return config
+})
+
+// Response interceptor for error handling
+apiClient.interceptors.response.use(
+  (response) => {
+    console.log('API response:', response.data)
+    return response
   },
   (error) => {
-    return Promise.reject(error)
-  }
-)
-
-// Response interceptor to handle auth errors
-apiClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
+    console.error('API error:', error)
     if (error.response?.status === 401) {
-      // Token expired or invalid
-      useAuthStore.getState().logout()
-      window.location.href = '/login'
+      localStorage.removeItem('auth_token')
+      // Не редиректим на login для демо
     }
     return Promise.reject(error)
   }

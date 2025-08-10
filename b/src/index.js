@@ -31,13 +31,13 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.CORS_ORIGIN?.split(',') || ["http://localhost:3000"],
+    origin: "http://localhost:3000",
     methods: ["GET", "POST"],
     credentials: true
   }
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 4000;
 
 // Initialize services
 const realtimeService = new RealtimeTranslationService(io);
@@ -45,8 +45,8 @@ const voiceService = new VoiceProcessingService();
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,
   message: {
     error: 'Too many requests from this IP, please try again later.',
     retryAfter: '15 minutes'
@@ -63,13 +63,13 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "wss:", "https:"],
+      connectSrc: ["'self'", "wss:", "https:", "http://localhost:3000"],
     },
   },
 }));
 
 app.use(cors({
-  origin: process.env.CORS_ORIGIN?.split(',') || ["http://localhost:3000"],
+  origin: "http://localhost:3000",
   credentials: true
 }));
 
@@ -87,203 +87,53 @@ app.get('/health', (req, res) => {
     status: 'OK', 
     timestamp: new Date().toISOString(),
     version: '2.0.0',
-    environment: process.env.NODE_ENV 
+    environment: process.env.NODE_ENV || 'development',
+    port: PORT
   });
 });
 
 // API Routes
 app.use('/api/v2/auth', authRoutes);
-app.use('/api/v2/translate', authMiddleware, translateRoutes);
-app.use('/api/v2/user', authMiddleware, userRoutes);
-app.use('/api/v2/call', authMiddleware, callRoutes);
+app.use('/api/v2/translate', translateRoutes);
+app.use('/api/v2/user', userRoutes);
+app.use('/api/v2/call', callRoutes);
 
-// Socket.IO connection handling
-io.use((socket, next) => {
-  // Socket authentication middleware
-  const token = socket.handshake.auth.token;
-  if (!token) {
-    return next(new Error('Authentication error'));
-  }
-  
-  try {
-    // Verify JWT token here
-    // const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    // socket.userId = decoded.userId;
-    next();
-  } catch (err) {
-    next(new Error('Authentication error'));
-  }
-});
-
+// Socket.IO namespace
 io.on('connection', (socket) => {
-  logger.info(`User connected: ${socket.id}`);
-  
-  // Join translation room
-  socket.on('join-translation', async (data) => {
-    const { roomId, language } = data;
-    socket.join(roomId);
-    socket.language = language;
-    
-    logger.info(`User ${socket.id} joined room ${roomId} with language ${language}`);
-    
-    // Notify room participants
-    socket.to(roomId).emit('user-joined', {
-      userId: socket.id,
-      language: language
-    });
-  });
-  
-  // Handle real-time voice translation
-  socket.on('voice-chunk', async (data) => {
-    try {
-      const { audioChunk, roomId, targetLanguage } = data;
-      
-      // Process voice chunk
-      const result = await realtimeService.processVoiceChunk(
-        audioChunk,
-        socket.language,
-        targetLanguage
-      );
-      
-      // Send translated audio to room
-      socket.to(roomId).emit('translated-voice', {
-        translatedAudio: result.translatedAudio,
-        translatedText: result.translatedText,
-        fromUser: socket.id
-      });
-      
-    } catch (error) {
-      logger.error('Voice translation error:', error);
-      socket.emit('translation-error', { message: 'Translation failed' });
-    }
-  });
-  
-  // Handle text translation
-  socket.on('translate-text', async (data) => {
-    try {
-      const { text, fromLang, toLang, roomId } = data;
-      
-      const result = await realtimeService.translateText(text, fromLang, toLang);
-      
-      // Send to specific room or back to sender
-      const target = roomId ? socket.to(roomId) : socket;
-      target.emit('text-translated', {
-        originalText: text,
-        translatedText: result.translatedText,
-        fromUser: socket.id
-      });
-      
-    } catch (error) {
-      logger.error('Text translation error:', error);
-      socket.emit('translation-error', { message: 'Translation failed' });
-    }
-  });
-  
-  // Handle call translation
-  socket.on('start-call-translation', async (data) => {
-    const { callId, participants } = data;
-    socket.join(`call-${callId}`);
-    
-    // Initialize call translation session
-    await realtimeService.startCallSession(callId, participants);
-    
-    logger.info(`Call translation started: ${callId}`);
-  });
-  
-  socket.on('call-audio', async (data) => {
-    try {
-      const { callId, audioChunk } = data;
-      
-      // Process and translate call audio
-      const translations = await realtimeService.processCallAudio(
-        audioChunk,
-        socket.language,
-        callId
-      );
-      
-      // Send translations to all call participants
-      translations.forEach(({ targetLanguage, translatedAudio, translatedText }) => {
-        socket.to(`call-${callId}`).emit('call-translation', {
-          targetLanguage,
-          translatedAudio,
-          translatedText,
-          fromUser: socket.id
-        });
-      });
-      
-    } catch (error) {
-      logger.error('Call translation error:', error);
-      socket.emit('translation-error', { message: 'Call translation failed' });
-    }
-  });
-  
-  socket.on('disconnect', () => {
-    logger.info(`User disconnected: ${socket.id}`);
-  });
+  logger.info(`Socket connected: ${socket.id}`);
 });
 
 // Error handling middleware
 app.use(errorHandler);
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    error: 'Endpoint not found',
-    message: `${req.method} ${req.originalUrl} is not a valid endpoint`
-  });
-});
-
-async function startServer() {
+// Initialize database and start server
+const startServer = async () => {
   try {
     // Connect to database
     await connectDatabase();
-    logger.info('✅ Database connected');
     
-    // Connect to Redis
+    // Connect to Redis (optional)
     await connectRedis();
-    logger.info('✅ Redis connected');
     
     // Start server
     server.listen(PORT, () => {
       logger.info(`🚀 SOLAR v2.0 API Server running on port ${PORT}`);
-      logger.info(`📊 Environment: ${process.env.NODE_ENV}`);
-      logger.info(`🌐 CORS enabled for: ${process.env.CORS_ORIGIN}`);
-      logger.info(`🔊 Socket.IO server ready for real-time translations`);
+      logger.info(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
+      logger.info(`🌐 Health check: http://localhost:${PORT}/health`);
+      logger.info(`📞 Frontend URL: http://localhost:3000`);
     });
-    
   } catch (error) {
-    logger.error('❌ Failed to start server:', error);
+    logger.error(`Failed to start server: ${error.message}`);
     process.exit(1);
   }
-}
+};
+
+startServer();
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received, shutting down gracefully');
   server.close(() => {
     logger.info('Process terminated');
-    process.exit(0);
   });
 });
-
-process.on('SIGINT', () => {
-  logger.info('SIGINT received, shutting down gracefully');
-  server.close(() => {
-    logger.info('Process terminated');
-    process.exit(0);
-  });
-});
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  process.exit(1);
-});
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception:', error);
-  process.exit(1);
-});
-
-startServer();
