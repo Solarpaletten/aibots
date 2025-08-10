@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String   @id @default(uuid())
+  email             String   @unique
+  password          String
+  name              String?
+  subscriptionTier  SubscriptionTier @default(FREE)
+  voiceMinutesUsed  Int      @default(0)
+  apiKeysUsed       Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  sessions          TranslationSession[]
+  callParticipants  CallParticipant[]
+  
+  @@map("users")
+}
+
+model TranslationSession {
+  id              String   @id @default(uuid())
+  userId          String
+  fromLanguage    Language
+  toLanguage      Language
+  type            TranslationType
+  duration        Int?     // seconds
+  charactersCount Int      @default(0)
+  voiceMinutes    Float    @default(0)
+  createdAt       DateTime @default(now())
+  
+  user            User     @relation(fields: [userId], references: [id])
+  voices          VoiceTranslation[]
+  
+  @@map("translation_sessions")
+}
+
+model VoiceTranslation {
+  id                String   @id @default(uuid())
+  sessionId         String
+  originalText      String
+  translatedText    String
+  originalAudioUrl  String?
+  translatedAudioUrl String?
+  processingTime    Int      // milliseconds
+  createdAt         DateTime @default(now())
+  
+  session           TranslationSession @relation(fields: [sessionId], references: [id])
+  
+  @@map("voice_translations")
+}
+
+model CallSession {
+  id              String   @id @default(uuid())
+  status          CallStatus @default(WAITING)
+  startedAt       DateTime @default(now())
+  endedAt         DateTime?
+  duration        Int?     // seconds
+  
+  participants    CallParticipant[]
+  
+  @@map("call_sessions")
+}
+
+model CallParticipant {
+  id          String   @id @default(uuid())
+  callId      String
+  userId      String
+  language    Language
+  role        ParticipantRole @default(PARTICIPANT)
+  joinedAt    DateTime @default(now())
+  leftAt      DateTime?
+  
+  call        CallSession @relation(fields: [callId], references: [id])
+  user        User        @relation(fields: [userId], references: [id])
+  
+  @@unique([callId, userId])
+  @@map("call_participants")
+}
+
+enum SubscriptionTier {
+  FREE
+  PREMIUM
+  BUSINESS
+}
+
+enum Language {
+  EN  // English
+  RU  // Russian
+  DE  // German
+  ES  // Spanish
+  CS  // Czech
+  PL  // Polish
+  LT  // Lithuanian
+  LV  // Latvian
+  NO  // Norwegian
+}
+
+enum TranslationType {
+  TEXT
+  VOICE
+  REALTIME_CALL
+}
+
+enum CallStatus {
+  WAITING
+  ACTIVE
+  ENDED
+}
+
+enum ParticipantRole {
+  HOST
+  PARTICIPANT
+}

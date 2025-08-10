@@ -1,0 +1,164 @@
+# =================================
+# 🚀 SOLAR v2.0 - Perfect .gitignore
+# =================================
+
+# 📦 Dependencies (ГЛАВНОЕ!)
+node_modules/
+*/node_modules/
+**/node_modules/
+.pnp
+.pnp.js
+
+# 🔐 Environment variables & Secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*
+!.env.example
+
+# 🔑 API Keys & Secrets
+*.key
+*.pem
+config/secrets.js
+config/secrets.json
+**/openai-key.txt
+**/api-keys.*
+secrets/
+.secrets/
+
+# 🏗️ Build outputs
+dist/
+build/
+*/dist/
+*/build/
+.next/
+out/
+
+# 📋 Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.npm
+.yarn-integrity
+
+# 🗄️ Database
+*.db
+*.sqlite
+*.sqlite3
+.db/
+
+# 🔧 Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+# 🖥️ OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 📱 Mobile
+*.ipa
+*.apk
+
+# ☁️ Cloud & Deployment
+.vercel/
+.netlify/
+
+# 🧪 Testing
+coverage/
+.nyc_output/
+.jest/
+
+# 📦 Package managers
+.yarn/
+.npm/
+node_modules.nosync
+
+# 🔄 Temporary files
+tmp/
+temp/
+.tmp/
+.temp/
+
+# 📊 Analytics & Monitoring
+.sentry-cli/
+
+# 🎯 Project specific
+uploads/*
+!uploads/.gitkeep
+cache/
+.cache/
+public/uploads/
+
+# 📧 Email templates cache
+.email-templates-cache/
+
+# 🔐 SSL Certificates
+*.crt
+*.csr
+*.key
+*.p12
+*.pfx
+
+# 📦 Backup files
+*.backup
+*.bak
+*.old
+*.orig
+
+# 🚫 Large files that shouldn't be in git
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# 📱 React Native
+*.jks
+*.p8
+*.p12
+*.mobileprovision
+ios/Pods/
+android/.gradle/
+
+# 🔧 IDE files
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+*.sublime-*
+.atom/
+
+# 🎮 Game engines
+*.unitypackage
+
+# 📊 Jupyter Notebooks
+.ipynb_checkpoints/
+
+# 🐳 Docker
+.docker/
+docker-compose.override.yml
+
+# 🔄 Git hooks
+.git/hooks/
+
+# 📝 Documentation builds
+docs/_build/
+docs/.doctrees/
+
+# 🎯 SOLAR specific ignores
+b/uploads/*
+!b/uploads/.gitkeep
+f/dist/
+.solar-cache/
