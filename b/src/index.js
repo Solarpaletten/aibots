@@ -16,11 +16,6 @@ const callRoutes = require('./routes/call');
 
 // Middleware
 const { errorHandler } = require('./middleware/errorHandler');
-const { authMiddleware } = require('./middleware/auth');
-
-// Services
-const { RealtimeTranslationService } = require('./services/realtimeTranslation');
-const { VoiceProcessingService } = require('./services/voiceProcessing');
 
 // Utils
 const { logger } = require('./utils/logger');
@@ -29,30 +24,35 @@ const { connectRedis } = require('./utils/redis');
 
 const app = express();
 const server = createServer(app);
+
+// 🚀 DUAL PORT SOLUTION: 4000 локально, 10000 для Render
+const PORT = process.env.PORT || 4000;  // Render поставит 10000, локально 4000
+
+console.log(`🎯 Starting server on PORT: ${PORT}`);
+console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+
+// CORS - поддержка и локалки и Render
+const corsOrigins = [
+  'http://localhost:3000',           // Frontend локально
+  'https://localhost:3000',          
+  process.env.FRONTEND_URL,          // Vercel frontend
+  /\.vercel\.app$/,                  // Все Vercel домены
+  /\.onrender\.com$/                 // Все Render домены
+].filter(Boolean);
+
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: corsOrigins,
     methods: ["GET", "POST"],
     credentials: true
   }
 });
 
-const PORT = process.env.PORT || 4000;
-
-// Initialize services
-const realtimeService = new RealtimeTranslationService(io);
-const voiceService = new VoiceProcessingService();
-
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: 100,
-  message: {
-    error: 'Too many requests from this IP, please try again later.',
-    retryAfter: '15 minutes'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
+  message: { error: 'Too many requests' }
 });
 
 // Middleware
@@ -60,35 +60,31 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "wss:", "https:", "http://localhost:3000"],
+      connectSrc: ["'self'", "wss:", "https:", "*"],
     },
   },
 }));
 
 app.use(cors({
-  origin: "http://localhost:3000",
+  origin: corsOrigins,
   credentials: true
 }));
 
 app.use(compression());
-app.use(morgan('combined', { stream: { write: (message) => logger.info(message.trim()) } }));
+app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Apply rate limiting to API routes
 app.use('/api', limiter);
 
-// Health check
+// 🩺 Health check - показывает на каком порту работаем
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
     version: '2.0.0',
+    port: PORT,
     environment: process.env.NODE_ENV || 'development',
-    port: PORT
+    message: PORT === '10000' ? 'Running on Render' : 'Running locally'
   });
 });
 
@@ -98,42 +94,63 @@ app.use('/api/v2/translate', translateRoutes);
 app.use('/api/v2/user', userRoutes);
 app.use('/api/v2/call', callRoutes);
 
-// Socket.IO namespace
+// Socket.IO
 io.on('connection', (socket) => {
-  logger.info(`Socket connected: ${socket.id}`);
+  console.log(`Socket connected: ${socket.id}`);
 });
 
-// Error handling middleware
+// Error handling
 app.use(errorHandler);
 
-// Initialize database and start server
+// 🚀 ЕДИНСТВЕННЫЙ server.listen - автоматически на правильном порту
 const startServer = async () => {
   try {
-    // Connect to database
-    await connectDatabase();
+    // Database connections (опционально)
+    try {
+      await connectDatabase();
+      console.log('✅ Database connected');
+    } catch (err) {
+      console.log('⚠️ Database connection failed (optional):', err.message);
+    }
+
+    try {
+      await connectRedis();
+      console.log('✅ Redis connected');
+    } catch (err) {
+      console.log('⚠️ Redis connection failed (optional):', err.message);
+    }
     
-    // Connect to Redis (optional)
-    await connectRedis();
-    
-    // Start server
-    server.listen(PORT, () => {
-      logger.info(`🚀 SOLAR v2.0 API Server running on port ${PORT}`);
-      logger.info(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
-      logger.info(`🌐 Health check: http://localhost:${PORT}/health`);
-      logger.info(`📞 Frontend URL: http://localhost:3000`);
+    // 🎯 ОСНОВНОЙ ЗАПУСК - работает на любом порту
+    server.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 SOLAR v2.0 API Server running on port ${PORT}`);
+      console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🌐 Health check: http://localhost:${PORT}/health`);
+      console.log(`📊 API Base: http://localhost:${PORT}/api/v2`);
+      
+      if (PORT === '10000') {
+        console.log(`🌍 RENDER MODE: https://your-app.onrender.com`);
+      } else {
+        console.log(`💻 LOCAL MODE: Frontend should use http://localhost:4000`);
+      }
     });
+    
   } catch (error) {
-    logger.error(`Failed to start server: ${error.message}`);
+    console.error(`❌ Failed to start server: ${error.message}`);
     process.exit(1);
   }
 };
 
-startServer();
-
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, shutting down gracefully');
+  console.log('SIGTERM received, shutting down gracefully');
   server.close(() => {
-    logger.info('Process terminated');
+    console.log('✅ Process terminated');
   });
 });
+
+// Start server
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = { app, server, io };
