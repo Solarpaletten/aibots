@@ -20,6 +20,11 @@ export default defineConfig({
       }
     }
   },
+  preview: {
+    port: parseInt(process.env.PORT || '4173'),
+    host: '0.0.0.0',
+    strictPort: true
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -27,6 +32,6 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    sourcemap: false,
   },
 })
