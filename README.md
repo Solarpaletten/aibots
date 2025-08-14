@@ -1,3 +1,7 @@
+backend  https://aibots-7eaz.onrender.com
+
+frontend https://aibots-frontend.onrender.com
+
 commit -m "🚀 Render build ready"
 
 # 🚀 SOLAR Voice Translator v2.0
