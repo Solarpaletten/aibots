@@ -26,7 +26,10 @@ const app = express();
 const server = createServer(app);
 
 // 🚀 DUAL PORT SOLUTION: 4000 локально, 10000 для Render
-const PORT = process.env.PORT || 4000;  // Render поставит 10000, локально 4000
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => {
+  console.log(`✅ Server is running on port ${PORT}`);
+});
 
 console.log(`🎯 Starting server on PORT: ${PORT}`);
 console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);

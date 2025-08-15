@@ -41,3 +41,78 @@
     background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
   }
 }
+/* Add to your global CSS file (src/index.css or tailwind.css) */
+
+/* Mobile menu slide-in animation */
+@keyframes slide-in {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+/* Hamburger icon hover effect */
+.hamburger-hover {
+  transition: all 0.2s ease;
+}
+
+.hamburger-hover:hover {
+  background-color: rgb(59 130 246);
+  color: white;
+  transform: scale(1.05);
+}
+
+/* Mobile menu item hover effect */
+.mobile-menu-item {
+  transition: all 0.2s ease;
+}
+
+.mobile-menu-item:hover {
+  transform: translateX(4px);
+}
+
+/* Backdrop blur effect */
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px);
+}
+
+/* Custom scrollbar for mobile menu */
+.mobile-menu-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.mobile-menu-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mobile-menu-scroll::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.5);
+  border-radius: 2px;
+}
+
+.mobile-menu-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.8);
+}
+
+/* Smooth transitions for layout changes */
+.layout-transition {
+  transition: margin-left 0.3s ease, padding 0.3s ease;
+}
+
+/* Safe area for mobile devices */
+@supports (padding: max(0px)) {
+  .mobile-safe-area {
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+}
