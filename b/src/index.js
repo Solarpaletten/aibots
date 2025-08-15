@@ -27,9 +27,9 @@ const server = createServer(app);
 
 // 🚀 DUAL PORT SOLUTION: 4000 локально, 10000 для Render
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`✅ Server is running on port ${PORT}`);
-});
+// app.listen(PORT, () => {
+//   console.log(`✅ Server is running on port ${PORT}`);
+// });
 
 console.log(`🎯 Starting server on PORT: ${PORT}`);
 console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
@@ -38,10 +38,15 @@ console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
 const corsOrigins = [
   'http://localhost:3000',           // Frontend локально
   'https://localhost:3000',          
-  process.env.FRONTEND_URL,          // Vercel frontend
+  'http://172.20.10.4:3000',         // Мобильный frontend
+  'http://172.20.10.4:4000',         // Мобильный backend
+  ...(process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : []),
+  process.env.FRONTEND_URL,          // Из .env
   /\.vercel\.app$/,                  // Все Vercel домены
   /\.onrender\.com$/                 // Все Render домены
 ].filter(Boolean);
+
+console.log('🌐 CORS Origins:', corsOrigins); // Добавьте для отладки
 
 const io = new Server(server, {
   cors: {
