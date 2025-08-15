@@ -4,6 +4,7 @@ import LanguageSelector from '@/components/ui/LanguageSelector'
 import VoiceRecorder from '@/components/ui/VoiceRecorder'
 import { translationService, TranslationResponse } from '@/services/translationService'
 import { SpeakerWaveIcon, ClipboardIcon } from '@heroicons/react/24/outline'
+import SmartTextInput from '@/components/SmartTextInput'
 
 const TranslatePage = () => {
   const [fromLanguage, setFromLanguage] = useState('EN')
@@ -14,6 +15,7 @@ const TranslatePage = () => {
   const [result, setResult] = useState<TranslationResponse | null>(null)
   const [activeTab, setActiveTab] = useState<'text' | 'voice'>('text')
 
+//
   const handleSwapLanguages = () => {
     setFromLanguage(toLanguage)
     setToLanguage(fromLanguage)
@@ -23,6 +25,7 @@ const TranslatePage = () => {
     }
   }
 
+//
   const handleTextTranslation = async () => {
     if (!inputText.trim()) {
       toast.error('Please enter text to translate')

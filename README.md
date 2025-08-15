@@ -1,3 +1,10 @@
+## 🎤 Компоненты записи
+
+- `ui/VoiceRecorder.tsx` — базовая кнопка записи (отдаёт File)
+- `advanced/VoiceRecorderFull.tsx` — полный модуль с транскрипцией, переводом и UI
+
+
+
 backend  https://aibots-7eaz.onrender.com
 
 frontend https://aibots-frontend.onrender.com
